@@ -41,12 +41,6 @@ pygame.mixer.music.play(-1)
 
 jump_sound = pygame.mixer.Sound("sounds/прыжок1.wav")
 coin_sound = pygame.mixer.Sound("sounds/монета.mp3")
-#Фон уровней
-background_images = {
-    "level1": pygame.image.load("images/level1/фон_1уровень.png"),
-    "level2": pygame.image.load("images/level2/фон_2уровень.png"),
-    "level3": pygame.image.load("images/level3/фон_3уровень.png"),
-}
 
 # Создание класса персонажа
 class Player:
@@ -111,7 +105,6 @@ def check_collision(player, platforms):
                 player.rect.bottom = platform.rect.top
                 player.on_ground = True
                 player.velocity_y = 0
-
 
 # Остальные классы (Platform, Coin, Spike, MovingPlatform) остаются без изменений
 
@@ -226,7 +219,7 @@ class Coin:
 # Определение уровней
 levels = [
     {
-        "background": background_images["level1"],
+        "background": pygame.image.load("images/level1/фон_1уровень.png"),
         "platforms": [
             Platform(0, HEIGHT - 40, WIDTH, 40),  # Нижняя платформа
             Platform(100, HEIGHT - 200, 200, 20),  # Платформа на высоте 200
@@ -245,11 +238,11 @@ levels = [
         ],
     },
     {
-        "background": background_images["level2"],
+        "background": pygame.image.load("images/level2/фон_2уровень.png"),
         "platforms": [
-            Platform(0, HEIGHT - 40, WIDTH, 40),
-            Platform(200, HEIGHT - 250, 200, 20),
-            Platform(500, HEIGHT - 350, 200, 20),
+            Platform(0, HEIGHT - 40, WIDTH, 40),  # Нижняя платформа
+            Platform(200, HEIGHT - 250, 200, 20),  # Платформа на высоте 250
+            Platform(500, HEIGHT - 350, 200, 20),  # Платформа на высоте 350
         ],
         "coins": [
             Coin(250, HEIGHT - 270),
@@ -263,25 +256,7 @@ levels = [
             MovingPlatform(300, HEIGHT - 200, 100, 20, 3, (200, 400)),
         ],
     },
-    {
-        "background": background_images["level3"],
-        "platforms": [
-            Platform(0, HEIGHT - 40, WIDTH, 40),
-            Platform(150, HEIGHT - 300, 200, 20),
-            Platform(450, HEIGHT - 400, 200, 20),
-        ],
-        "coins": [
-            Coin(200, HEIGHT - 320),
-            Coin(500, HEIGHT - 420),
-        ],
-        "spikes": [
-            Spike(350, HEIGHT - 40),
-            Spike(650, HEIGHT - 40),
-        ],
-        "moving_platforms": [
-            MovingPlatform(250, HEIGHT - 250, 100, 20, 4, (150, 450)),
-        ],
-    },
+    # Добавьте другие уровни здесь
 ]
 
 # Основной игровой цикл
@@ -291,7 +266,7 @@ def game_loop(level, character):
     coins = level["coins"]
     spikes = level["spikes"]
     moving_platforms = level["moving_platforms"]
-    background = level["background"]  # Фон уровня
+    background = level["background"]
     score = 0
 
     running = True
@@ -339,7 +314,7 @@ def game_loop(level, character):
                 return "restart"
 
         # Отрисовка
-        screen.blit(background, (0, 0))  # Отрисовка фона уровня
+        screen.blit(background, (0, 0))  # Отображение фонового изображения
 
         # Отрисовка платформ
         for platform in platforms:
