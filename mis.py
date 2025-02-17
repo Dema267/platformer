@@ -35,12 +35,24 @@ player_images = {
 coin_image = pygame.image.load("images/монета.png")
 spike_image = pygame.image.load("images/шипы.png")
 background_image = pygame.image.load("images/фон1.png")  # Загрузите фоновое изображение
+key_image = pygame.image.load("images/objekt/ключ.png")
+door_image = pygame.image.load("images/objekt/дверь_закрыта.png")
+water_image = pygame.image.load("images/objekt/вода.png")
 
 pygame.mixer.music.load("sounds/12cfb941f3a5f50.mp3")
 pygame.mixer.music.play(-1)
 
 jump_sound = pygame.mixer.Sound("sounds/прыжок1.wav")
 coin_sound = pygame.mixer.Sound("sounds/монета.mp3")
+key_sound = pygame.mixer.Sound("sounds/ключ.mp3")
+door_sound = pygame.mixer.Sound("sounds/дверь_открылась.mp3")
+
+#Фон уровней
+background_images = {
+    "level1": pygame.image.load("images/level1/фон_1уровень.png"),
+    "level2": pygame.image.load("images/level2/фон_2уровень.png"),
+    "level3": pygame.image.load("images/level3/фон_3уровень.png"),
+}
 
 # Создание класса персонажа
 class Player:
@@ -216,10 +228,35 @@ class Coin:
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
+class Key:
+    def __init__(self, x, y):
+        self.image = key_image
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+class Door:
+    def __init__(self, x, y):
+        self.image = door_image
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.open = False
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+class Water:
+    def __init__(self, x, y, width, height):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.image = pygame.transform.scale(water_image, (width, height))
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
 # Определение уровней
 levels = [
     {
-        "background": pygame.image.load("images/level1/фон_1уровень.png"),
+        "background": background_images["level1"],
         "platforms": [
             Platform(0, HEIGHT - 40, WIDTH, 40),  # Нижняя платформа
             Platform(100, HEIGHT - 200, 200, 20),  # Платформа на высоте 200
@@ -236,27 +273,13 @@ levels = [
         "moving_platforms": [
             MovingPlatform(200, HEIGHT - 150, 100, 20, 2, (100, 300)),
         ],
-    },
-    {
-        "background": pygame.image.load("images/level2/фон_2уровень.png"),
-        "platforms": [
-            Platform(0, HEIGHT - 40, WIDTH, 40),  # Нижняя платформа
-            Platform(200, HEIGHT - 250, 200, 20),  # Платформа на высоте 250
-            Platform(500, HEIGHT - 350, 200, 20),  # Платформа на высоте 350
-        ],
-        "coins": [
-            Coin(250, HEIGHT - 270),
-            Coin(550, HEIGHT - 370),
-        ],
-        "spikes": [
-            Spike(400, HEIGHT - 40),
-            Spike(700, HEIGHT - 40),
-        ],
-        "moving_platforms": [
-            MovingPlatform(300, HEIGHT - 200, 100, 20, 3, (200, 400)),
+        "key": Key(700, HEIGHT - 400),
+        "door": Door(800, HEIGHT - 100),
+        "water": [
+            Water(500, HEIGHT - 100, 200, 50),
         ],
     },
-    # Добавьте другие уровни здесь
+    # Добавьте другие уровни по аналогии
 ]
 
 # Основной игровой цикл
@@ -266,8 +289,12 @@ def game_loop(level, character):
     coins = level["coins"]
     spikes = level["spikes"]
     moving_platforms = level["moving_platforms"]
-    background = level["background"]
+    key = level["key"]
+    door = level["door"]
+    water = level["water"]
+    background = level["background"]  # Фон уровня
     score = 0
+    has_key = False
 
     running = True
     while running:
@@ -307,14 +334,31 @@ def game_loop(level, character):
                 score += 1
                 coin_sound.play()
 
+        # Проверка сбора ключа
+        if not has_key and player.rect.colliderect(key.rect):
+            has_key = True
+            key_sound.play()
+
+        # Проверка открытия двери
+        if has_key and player.rect.colliderect(door.rect):
+            door.open = True
+            door_sound.play()
+            return "next_level"
+
         # Проверка столкновения с шипами
         for spike in spikes:
             if player.rect.colliderect(spike.rect):
                 print("Игрок погиб!")
                 return "restart"
 
+        # Проверка столкновения с водой
+        for water_obj in water:
+            if player.rect.colliderect(water_obj.rect):
+                print("Игрок утонул!")
+                return "restart"
+
         # Отрисовка
-        screen.blit(background, (0, 0))  # Отображение фонового изображения
+        screen.blit(background, (0, 0))  # Отрисовка фона уровня
 
         # Отрисовка платформ
         for platform in platforms:
@@ -331,6 +375,17 @@ def game_loop(level, character):
         # Отрисовка шипов
         for spike in spikes:
             spike.draw(screen)
+
+        # Отрисовка ключа
+        if not has_key:
+            key.draw(screen)
+
+        # Отрисовка двери
+        door.draw(screen)
+
+        # Отрисовка воды
+        for water_obj in water:
+            water_obj.draw(screen)
 
         # Отрисовка персонажа
         player.draw(screen)
@@ -353,7 +408,7 @@ while True:
         result = game_loop(levels[current_level], selected_character)
         if result == "restart":
             current_level = 0
-        else:
+        elif result == "next_level":
             current_level = (current_level + 1) % len(levels)
     elif choice == "exit":
         pygame.quit()
