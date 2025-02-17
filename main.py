@@ -3,17 +3,40 @@ import sys
 
 # Инициализация PyGame
 pygame.init()
-WIDTH, HEIGHT = 1100, 750
+WIDTH, HEIGHT = 1000, 750
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("2D-платформер")
 clock = pygame.time.Clock()
 
 # Загрузка материалов (фото, звуки)
-player_image = pygame.image.load("images/персонаж.png")
+player_images = {
+    "player1": {
+        "idle": pygame.image.load("images/person1/персонаж.png"),
+        "left": pygame.image.load("images/person1/влево.png"),
+        "right": pygame.image.load("images/person1/вправо.png"),
+        "jump_right": pygame.image.load("images/person1/прыжок_вправо.png"),
+        "jump_left": pygame.image.load("images/person1/прыжок_влево.png"),
+    },
+    "player2": {
+        "idle": pygame.image.load("images/person2/персонаж2.png"),
+        "left": pygame.image.load("images/person2/влево2.png"),
+        "right": pygame.image.load("images/person2/вправо2.png"),
+        "jump_right": pygame.image.load("images/person2/прыжок_вправо2.png"),
+        "jump_left": pygame.image.load("images/person2/прыжок_влево2.png"),
+    },
+    "player3": {
+        "idle": pygame.image.load("images/person3/персонаж3.png"),
+        "left": pygame.image.load("images/person3/влево3.png"),
+        "right": pygame.image.load("images/person3/вправо3.png"),
+        "jump_right": pygame.image.load("images/person3/прыжок_вправо3.png"),
+        "jump_left": pygame.image.load("images/person3/прыжок_влево3.png"),
+    },
+}
 coin_image = pygame.image.load("images/монета.png")
-spike_image = pygame.image.load("images/шипы.png")  # Загрузите изображение шипов
+spike_image = pygame.image.load("images/шипы.png")
+background_image = pygame.image.load("images/фон1.png")  # Загрузите фоновое изображение
 
-pygame.mixer.music.load("sounds/меню игры.mp3")
+pygame.mixer.music.load("sounds/12cfb941f3a5f50.mp3")
 pygame.mixer.music.play(-1)
 
 jump_sound = pygame.mixer.Sound("sounds/прыжок1.wav")
@@ -21,14 +44,8 @@ coin_sound = pygame.mixer.Sound("sounds/монета.mp3")
 
 # Создание класса персонажа
 class Player:
-    def __init__(self, x, y):
-        self.images = {
-            "idle": pygame.image.load("images/персонаж.png"),
-            "left": pygame.image.load("images/влево.png"),
-            "right": pygame.image.load("images/вправо.png"),
-            "jump_right": pygame.image.load("images/прыжок_вправо.png"),
-            "jump_left": pygame.image.load("images/прыжок_влево.png"),
-        }
+    def __init__(self, x, y, character="player1"):
+        self.images = player_images[character]
         self.image = self.images["idle"]  # Начальное изображение
         self.rect = self.image.get_rect(topleft=(x, y))
         self.velocity_y = 0
@@ -51,24 +68,6 @@ class Player:
             self.velocity_y = -15
             self.on_ground = False
             jump_sound.play()
-
-    def draw(self, screen):
-        screen.blit(self.image, self.rect)
-
-
-# Создание класса платформ
-class Platform:
-    def __init__(self, x, y, width, height):
-        self.rect = pygame.Rect(x, y, width, height)
-
-    def draw(self, screen):
-        pygame.draw.rect(screen, (0, 255, 0), self.rect)
-
-# Создание класса монет
-class Coin:
-    def __init__(self, x, y):
-        self.image = coin_image
-        self.rect = self.image.get_rect(topleft=(x, y))
 
     def draw(self, screen):
         screen.blit(self.image, self.rect)
@@ -107,68 +106,141 @@ def check_collision(player, platforms):
                 player.on_ground = True
                 player.velocity_y = 0
 
+
+# Остальные классы (Platform, Coin, Spike, MovingPlatform) остаются без изменений
+
 # Функция для отображения главного меню
 def main_menu():
     font = pygame.font.Font(None, 74)
-    title_text = font.render("2D-платформер", True, (255, 255, 255))
-    start_text = font.render("Начать игру", True, (255, 255, 255))
-    exit_text = font.render("Выход", True, (255, 255, 255))
+    small_font = pygame.font.Font(None, 50)
+    title_text = font.render("Alien Ascent", True, (30,30,30))
+    start_text = font.render("START", True, (255, 255, 255))
+    settings_text = font.render("OPTION", True, (255, 255, 255))
+    exit_text = font.render("EXIT", True, (255, 255, 255))
+
+    selected_character = "player1"  # По умолчанию выбран первый персонаж
 
     while True:
-        screen.fill((0, 0, 0))
+        screen.blit(background_image, (0, 0))  # Отображение фонового изображения
         screen.blit(title_text, (WIDTH // 2 - 150, 100))
-        screen.blit(start_text, (WIDTH // 2 - 100, 300))
-        screen.blit(exit_text, (WIDTH // 2 - 50, 400))
 
+        # Координаты и размеры кнопок
+        button_width, button_height = 300, 80
+        start_button = pygame.Rect(WIDTH // 2 - 150, 300, button_width, button_height)
+        settings_button = pygame.Rect(WIDTH // 2 - 150, 400, button_width, button_height)
+        exit_button = pygame.Rect(WIDTH // 2 - 150, 500, button_width, button_height)
+
+        # Отрисовка кнопок с выделением
         mouse_pos = pygame.mouse.get_pos()
-        mouse_click = pygame.mouse.get_pressed()
+        for button, text in zip([start_button, settings_button, exit_button], [start_text, settings_text, exit_text]):
+            if button.collidepoint(mouse_pos):
+                pygame.draw.rect(screen, (100, 100, 100), button)  # Выделение кнопки
+            else:
+                pygame.draw.rect(screen, (50, 50, 50), button)
+            screen.blit(text, (button.x + 50, button.y + 20))
 
-        # Проверка нажатия на кнопки
-        if WIDTH // 2 - 100 <= mouse_pos[0] <= WIDTH // 2 + 100 and 300 <= mouse_pos[1] <= 350:
-            if mouse_click[0]:
-                return "start"
-        if WIDTH // 2 - 50 <= mouse_pos[0] <= WIDTH // 2 + 50 and 400 <= mouse_pos[1] <= 450:
-            if mouse_click[0]:
-                return "exit"
-
+        # Обработка событий
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if start_button.collidepoint(mouse_pos):
+                    return "start", selected_character
+                elif settings_button.collidepoint(mouse_pos):
+                    selected_character = settings_menu()
+                elif exit_button.collidepoint(mouse_pos):
+                    return "exit", selected_character
 
         pygame.display.flip()
         clock.tick(60)
 
-# Инициализация уровней
-levels = [
-    {
+# Функция для отображения меню настроек
+def settings_menu():
+    font = pygame.font.Font(None, 74)
+    small_font = pygame.font.Font(None, 50)
+    title_text = font.render("Выберите персонажа", True, (30, 30, 30))
+    player1_text = small_font.render("Персонаж 1", True, (255, 255, 255))
+    player2_text = small_font.render("Персонаж 2", True, (255, 255, 255))
+    player3_text = small_font.render("Персонаж 3", True, (255, 255, 255))
+
+    selected_character = "player1"
+
+    while True:
+        screen.blit(background_image, (0, 0))  # Отображение фонового изображения
+        screen.blit(title_text, (WIDTH // 2 - 200, 100))
+
+        # Координаты и размеры кнопок
+        button_width, button_height = 300, 80
+        player1_button = pygame.Rect(WIDTH // 2 - 150, 250, button_width, button_height)
+        player2_button = pygame.Rect(WIDTH // 2 - 150, 350, button_width, button_height)
+        player3_button = pygame.Rect(WIDTH // 2 - 150, 450, button_width, button_height)
+
+        # Отрисовка кнопок с выделением
+        mouse_pos = pygame.mouse.get_pos()
+        for button, text in zip([player1_button, player2_button, player3_button], [player1_text, player2_text, player3_text]):
+            if button.collidepoint(mouse_pos):
+                pygame.draw.rect(screen, (100, 100, 100), button)  # Выделение кнопки
+            else:
+                pygame.draw.rect(screen, (50, 50, 50), button)
+            screen.blit(text, (button.x + 50, button.y + 20))
+
+        # Обработка событий
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if player1_button.collidepoint(mouse_pos):
+                    return "player1"
+                elif player2_button.collidepoint(mouse_pos):
+                    return "player2"
+                elif player3_button.collidepoint(mouse_pos):
+                    return "player3"
+
+        pygame.display.flip()
+        clock.tick(60)
+
+# Определение классов для платформ, монет и шипов
+class Platform:
+    def __init__(self, x, y, width, height):
+        self.rect = pygame.Rect(x, y, width, height)
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, (0, 255, 0), self.rect)
+
+class Coin:
+    def __init__(self, x, y):
+        self.image = coin_image
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+# Определение уровней
+levels = {
         "platforms": [
-            Platform(0, HEIGHT - 50, WIDTH, 50),
-            Platform(200, 400, 200, 20),
-            Platform(500, 300, 150, 20),
+            Platform(0, HEIGHT - 40, WIDTH, 40),  # Нижняя платформа
+            Platform(100, HEIGHT - 200, 200, 20),  # Платформа на высоте 200
+            Platform(400, HEIGHT - 300, 200, 20),  # Платформа на высоте 300
         ],
-        "coins": [Coin(250, 350), Coin(550, 250)],
-        "spikes": [Spike(400, HEIGHT - 100)],
-        "moving_platforms": [MovingPlatform(300, 200, 100, 20, 2, [300, 500])],
-    },
-    {
-        "platforms": [
-            Platform(0, HEIGHT - 50, WIDTH, 50),
-            Platform(100, 500, 150, 20),
-            Platform(400, 400, 150, 20),
+        "coins": [
+            Coin(150, HEIGHT - 220),
+            Coin(450, HEIGHT - 320),
         ],
-        "coins": [Coin(150, 450), Coin(450, 350)],
-        "spikes": [Spike(600, HEIGHT - 100)],
-        "moving_platforms": [MovingPlatform(200, 300, 100, 20, 3, [200, 600])],
+        "spikes": [
+            Spike(300, HEIGHT - 40),
+            Spike(600, HEIGHT - 40),
+        ],
+        "moving_platforms": [
+            MovingPlatform(200, HEIGHT - 150, 100, 20, 2, (100, 300)),
+        ],
     },
-]
-
-
-
+    # Добавьте другие уровни здесь
 
 # Основной игровой цикл
-def game_loop(level):
-    player = Player(100, HEIGHT - 100)
+def game_loop(level, character):
+    player = Player(100, HEIGHT - 100, character)
     platforms = level["platforms"]
     coins = level["coins"]
     spikes = level["spikes"]
@@ -252,10 +324,11 @@ def game_loop(level):
 
 # Запуск игры
 current_level = 0
+selected_character = "player1"
 while True:
-    choice = main_menu()
+    choice, selected_character = main_menu()
     if choice == "start":
-        result = game_loop(levels[current_level])
+        result = game_loop(levels[current_level], selected_character)
         if result == "restart":
             current_level = 0
         else:
